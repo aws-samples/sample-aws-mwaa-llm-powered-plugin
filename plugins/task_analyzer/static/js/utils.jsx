@@ -9,6 +9,6 @@ const getSeverityColor = (severity) => {
 
 const renderMarkdown = (text) => {
     if (!text) return '';
-    // Use marked library to convert markdown to HTML
-    return marked.parse(text, { breaks: true, gfm: true });
+    const rawHtml = marked.parse(text, { breaks: true, gfm: true });
+    return DOMPurify.sanitize(rawHtml);
 };
