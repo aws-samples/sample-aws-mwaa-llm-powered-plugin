@@ -46,6 +46,10 @@ Open: http://localhost:8080/task-analyzer/
 
 ---
 
+## Architecture
+
+![Architecture Overview](diagrams/01_architecture_overview.png)
+
 ## Features
 
 - 🤖 AI-powered task failure analysis using AWS Bedrock
@@ -70,6 +74,8 @@ Open: http://localhost:8080/task-analyzer/
 ---
 
 ## Supported Operators
+
+![Multi-Operator Script Analysis](diagrams/02_multi_operator_analysis.png)
 
 The plugin automatically detects and analyzes scripts from various operators:
 
@@ -180,6 +186,8 @@ For S3 script fetching:
 ---
 
 ## Version Compatibility
+
+![Version Compatibility Decision Tree](diagrams/03_version_compatibility.png)
 
 ### FastAPI Version (Recommended)
 **File**: `task_analyzer_plugin.py`
@@ -479,6 +487,8 @@ LLM receives complete context:
 
 #### Token Usage
 
+![What the LLM Receives](diagrams/04_llm_context_convergence.png)
+
 **Typical Case:**
 - DAG code: ~500 tokens
 - Task context: ~1,000 tokens
@@ -540,23 +550,7 @@ astro/
 │       │       └── utils.jsx
 │       └── templates/
 │           └── index.html
-└── ...
-```
-│   ├── task_analyzer_plugin.py       # Airflow 2.10+/3.x (FastAPI)
-│   ├── task_analyzer_plugin_v2.py    # Airflow 2.0-2.9 (Flask)
-│   └── task_analyzer/                # Shared resources
-│       ├── prompts.py                # Bedrock configuration
-│       ├── static/                   # Frontend assets
-│       │   ├── css/styles.css
-│       │   └── js/
-│       │       ├── app.jsx
-│       │       ├── components.jsx
-│       │       ├── config.js
-│       │       ├── template.jsx
-│       │       └── utils.jsx
-│       └── templates/
-│           └── index.html
-└── ...
+└── 
 ```
 
 ---
