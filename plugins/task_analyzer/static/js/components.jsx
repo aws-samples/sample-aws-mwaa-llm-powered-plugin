@@ -1,6 +1,16 @@
 /** @jsx React.createElement */
 // React components for Task Analyzer
 
+const SafeMarkdown = ({ text, style }) => {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+        if (ref.current) {
+            ref.current.innerHTML = renderMarkdown(text);
+        }
+    }, [text]);
+    return <div ref={ref} style={style} />;
+};
+
 const AnalysisMetrics = ({ analysisResult, showPrompt, setShowPrompt }) => (
     <div style={{
         marginBottom: '15px',
@@ -90,14 +100,7 @@ const RootCauseBox = ({ parsed }) => (
             color: '#ff6b6b',
             fontWeight: '600'
         }}>🔍 Root Cause</h3>
-        <div 
-            style={{ 
-                margin: 0, 
-                color: '#c9d1d9', 
-                lineHeight: '1.6'
-            }}
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(parsed.root_cause) }}
-        />
+        <SafeMarkdown text={parsed.root_cause} style={{ margin: 0, color: '#c9d1d9', lineHeight: '1.6' }} />
     </div>
 );
 
@@ -114,14 +117,7 @@ const ResolutionBox = ({ parsed }) => (
             color: '#6bff6b',
             fontWeight: '600'
         }}>✅ Resolution</h3>
-        <div 
-            style={{
-                margin: 0,
-                color: '#c9d1d9',
-                lineHeight: '1.6'
-            }}
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(parsed.resolution) }}
-        />
+        <SafeMarkdown text={parsed.resolution} style={{ margin: 0, color: '#c9d1d9', lineHeight: '1.6' }} />
     </div>
 );
 
@@ -141,13 +137,7 @@ const AdditionalDetails = ({ parsed }) => {
                 color: '#58a6ff',
                 fontWeight: '600'
             }}>📋 Additional Details</h3>
-            <div 
-                style={{
-                    color: '#c9d1d9',
-                    lineHeight: '1.6'
-                }}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(parsed.additional_details) }}
-            />
+            <SafeMarkdown text={parsed.additional_details} style={{ color: '#c9d1d9', lineHeight: '1.6' }} />
         </div>
     );
 };
