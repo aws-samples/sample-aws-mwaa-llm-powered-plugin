@@ -2,7 +2,7 @@
 DAG to test Task Analyzer plugin with dynamic task mapping and induced failures.
 """
 from datetime import datetime
-import random
+import secrets
 from airflow import DAG
 from airflow.decorators import task
 
@@ -17,7 +17,7 @@ with DAG(
     @task
     def generate_numbers():
         """Generate random count of numbers to process"""
-        count = random.randint(3, 7)
+        count = secrets.randbelow(5) + 3
         return list(range(count))
 
     @task

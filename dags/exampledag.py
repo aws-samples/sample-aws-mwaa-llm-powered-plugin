@@ -47,7 +47,7 @@ def example_astronauts():
         of Astronauts to be used in the next task.
         """
         try:
-            r = requests.get("http://api.open-notify.org/astros.json")
+            r = requests.get("https://api.open-notify.org/astros.json", timeout=15)
             r.raise_for_status()
             number_of_people_in_space = r.json()["number"]
             list_of_people_in_space = r.json()["people"]
