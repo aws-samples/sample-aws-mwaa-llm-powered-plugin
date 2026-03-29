@@ -2,13 +2,11 @@
 // React components for Task Analyzer
 
 const SafeMarkdown = ({ text, style }) => {
-    const ref = React.useRef(null);
-    React.useEffect(() => {
-        if (ref.current) {
-            ref.current.innerHTML = renderMarkdown(text);
-        }
+    const sanitizedHtml = React.useMemo(() => {
+        const rawHtml = renderMarkdown(text);
+        return DOMPurify.sanitize(rawHtml);
     }, [text]);
-    return <div ref={ref} style={style} />;
+    return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} style={style} />;
 };
 
 const AnalysisMetrics = ({ analysisResult, showPrompt, setShowPrompt }) => (
