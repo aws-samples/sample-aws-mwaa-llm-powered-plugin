@@ -217,10 +217,15 @@ async def analyze_task(request: dict):  # pylint: disable=too-many-locals
             'task_analysis', model_key, data
         )
 
-        response = bedrock_client.invoke_model(
-            modelId=bedrock_payload['model_id'],
-            body=json.dumps(bedrock_payload['payload'])
-        )
+        invoke_params = {
+            'modelId': bedrock_payload['model_id'],
+            'body': json.dumps(bedrock_payload['payload'])
+        }
+        if bedrock_payload.get('guardrail_id'):
+            invoke_params['guardrailIdentifier'] = bedrock_payload['guardrail_id']
+            invoke_params['guardrailVersion'] = bedrock_payload['guardrail_version']
+
+        response = bedrock_client.invoke_model(**invoke_params)
 
         result = json.loads(response['body'].read())
         analysis = result['content'][0]['text']

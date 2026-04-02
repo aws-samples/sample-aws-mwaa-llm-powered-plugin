@@ -50,7 +50,9 @@ BEDROCK_MODELS = {
 
 BEDROCK_CONFIG = {
     'anthropic_version': 'bedrock-2023-05-31',
-    'default_model': get_model_id('bedrock_default_model', 'claude-3.5-sonnet')
+    'default_model': get_model_id('bedrock_default_model', 'claude-3.5-sonnet'),
+    'guardrail_id': get_model_id('bedrock_guardrail_id', ''),
+    'guardrail_version': get_model_id('bedrock_guardrail_version', 'DRAFT'),
 }
 
 PROMPTS = {
@@ -152,7 +154,7 @@ def build_bedrock_payload(prompt_key, model_key=None, data=None):
     if not model_config:
         raise ValueError(f"Model '{model_key}' not found")
 
-    return {
+    result = {
         'model_id': model_config['model_id'],
         'payload': {
             'anthropic_version': BEDROCK_CONFIG['anthropic_version'],
@@ -160,3 +162,9 @@ def build_bedrock_payload(prompt_key, model_key=None, data=None):
             'messages': [prompt]
         }
     }
+
+    if BEDROCK_CONFIG['guardrail_id']:
+        result['guardrail_id'] = BEDROCK_CONFIG['guardrail_id']
+        result['guardrail_version'] = BEDROCK_CONFIG['guardrail_version']
+
+    return result
