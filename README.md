@@ -48,7 +48,10 @@ Open: http://localhost:8080/task-analyzer/
 
 ## Architecture
 
-![Architecture Overview](diagrams/01_architecture_overview.png)
+![Architecture Overview](diagrams/mwaa-plugin.png)
+
+### Flow Diagram
+![Flow Diagram](diagrams/01_architecture_overview.png)
 
 ## Features
 
