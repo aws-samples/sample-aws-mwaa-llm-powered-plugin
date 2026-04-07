@@ -55,17 +55,17 @@ Open: http://localhost:8080/task-analyzer/
 
 ## Features
 
-- 🤖 AI-powered task failure analysis using AWS Bedrock
-- 🔍 Root cause identification with detailed explanations
-- 💡 Actionable fix recommendations
-- 📊 Multiple Claude model support (Sonnet 3.5, 4.5, 4.6, Opus 4.6)
-- 🔄 Works with Airflow 2.0+ and 3.x
-- 🐳 Compatible with Astro CLI and MWAA Local
-- ⚡ FastAPI support for Airflow 2.10+
-- 📝 Comprehensive DAG context analysis
-- 🔗 Direct integration with Airflow UI
-- 🗺️ **Full support for dynamically mapped tasks**
-- ⚙️ **Multi-operator script analysis** - Automatically fetches and analyzes scripts from:
+- AI-powered task failure analysis using AWS Bedrock
+- Root cause identification with detailed explanations
+- Actionable fix recommendations
+- Multiple Claude model support (Sonnet 3.5, 4.5, 4.6, Opus 4.6)
+- Works with Airflow 2.0+ and 3.x
+- Compatible with Astro CLI and MWAA Local
+- FastAPI support for Airflow 2.10+
+- Comprehensive DAG context analysis
+- Direct integration with Airflow UI
+- **Full support for dynamically mapped tasks**
+- **Multi-operator script analysis** - Automatically fetches and analyzes scripts from:
   - AWS Glue jobs (from S3)
   - EMR steps (from S3)
   - Athena queries (inline SQL)
@@ -151,16 +151,16 @@ best practices, common pitfalls, and error patterns when analyzing the failure.
 ### Script Analysis Benefits
 
 **For Code Errors (Syntax, Logic):**
-- ⭐⭐⭐⭐⭐ Glue/EMR scripts - See exact error line
-- ⭐⭐⭐⭐⭐ SQL queries - Identify syntax/logic issues
-- ⭐⭐⭐⭐⭐ Bash commands - Understand command failures
+- [5/5] Glue/EMR scripts - See exact error line
+- [5/5] SQL queries - Identify syntax/logic issues
+- [5/5] Bash commands - Understand command failures
 
 **For Join/Broadcast Failures:**
-- ⭐⭐⭐⭐⭐ Glue/EMR - See join conditions, data types
-- ⭐⭐⭐⭐⭐ Athena/Redshift - Analyze SQL joins
+- [5/5] Glue/EMR - See join conditions, data types
+- [5/5] Athena/Redshift - Analyze SQL joins
 
 **For Infrastructure Issues:**
-- ⭐⭐ Less valuable (script won't help with memory/timeout)
+- [2/5] Less valuable (script won't help with memory/timeout)
 
 ### Configuration
 
@@ -394,11 +394,11 @@ Logs:         /api/v2/dags/{dagId}/dagRuns/{runId}/taskInstances/{taskId}/logs/{
 ```
 
 **3. Key Features**
-- ✅ No hardcoded DAG names, task IDs, or map indices
-- ✅ Works with ANY DAG and ANY task
-- ✅ Automatic detection from URL and API response
-- ✅ Handles task retries using actual `try_number` from context
-- ✅ Validates `map_index >= 0` before adding to URLs
+- No hardcoded DAG names, task IDs, or map indices
+- Works with ANY DAG and ANY task
+- Automatic detection from URL and API response
+- Handles task retries using actual `try_number` from context
+- Validates `map_index >= 0` before adding to URLs
 
 **4. Example Usage**
 
@@ -442,16 +442,16 @@ The plugin **automatically fetches and analyzes scripts from multiple operator t
 #### Smart Detection
 
 **When Scripts ARE Fetched:**
-- ✅ Always for inline scripts (Bash, SQL, Python)
-- ✅ For external scripts (Glue, EMR) when error suggests code issue:
+- Always for inline scripts (Bash, SQL, Python)
+- For external scripts (Glue, EMR) when error suggests code issue:
   - Syntax errors, type errors, value errors
   - Join failures, broadcast failures
   - Import errors, key errors
 
 **When Scripts are NOT Fetched:**
-- ❌ Infrastructure failures (out of memory, timeout)
-- ❌ Permission errors (IAM issues)  
-- ❌ Resource constraints (DPU limits, network issues)
+- Infrastructure failures (out of memory, timeout)
+- Permission errors (IAM issues)  
+- Resource constraints (DPU limits, network issues)
 
 #### Script Processing
 
@@ -519,13 +519,13 @@ LLM receives complete context:
 
 ### Shared Components (No Changes)
 
-- ✅ All frontend JavaScript/React code
-- ✅ CSS styles
-- ✅ HTML templates
-- ✅ Bedrock prompts configuration
-- ✅ AWS integration logic
-- ✅ API endpoint URLs
-- ✅ Business logic
+- All frontend JavaScript/React code
+- CSS styles
+- HTML templates
+- Bedrock prompts configuration
+- AWS integration logic
+- API endpoint URLs
+- Business logic
 
 ### File Structure
 
@@ -555,6 +555,23 @@ astro/
 │           └── index.html
 └── 
 ```
+
+---
+
+## Security Recommendations
+
+This solution does not deploy or manage AWS services such as Amazon S3, AWS Glue, Amazon EMR, Amazon Athena, or Amazon Redshift. However, it interacts with these services to fetch task scripts, logs, and metadata for failure analysis.
+
+When using this solution in a production environment, follow AWS security best practices for all AWS services used in your environment:
+
+- **Encryption at rest** - Enable encryption for data stored in S3, Glue Data Catalog, Redshift clusters, and other data stores
+- **Encryption in transit** - Enforce TLS for all API calls and data transfers between services
+- **IAM least-privilege access** - Grant only the minimum permissions required for the plugin to function (see [Configuration](#configuration) for required permissions)
+- **Authentication and authorization** - Use IAM roles and policies to control access to Bedrock, S3, and other services; avoid long-lived credentials
+- **Logging and monitoring** - Enable AWS CloudTrail and Amazon CloudWatch to audit API calls made by the plugin
+- **Data backup** - Ensure backup and recovery mechanisms are in place for any data stores the plugin reads from
+
+For detailed guidance, refer to the [AWS Well-Architected Framework - Security Pillar](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html).
 
 ---
 
@@ -731,17 +748,3 @@ open http://localhost:8080/task-analyzer/
 ```
 
 ---
-
-## Support Matrix
-
-| Airflow Version | Plugin File | Framework | Status |
-|----------------|-------------|-----------|--------|
-| 2.0 - 2.9.x | `task_analyzer_plugin_v2.py` | Flask | ✅ Supported |
-| 2.10+ | `task_analyzer_plugin.py` | FastAPI | ✅ Supported |
-| 3.0+ | `task_analyzer_plugin.py` | FastAPI | ✅ Supported |
-
----
-
-**Last Updated**: 2025  
-**Supported Environments**: Astro CLI, MWAA Local, Standard Airflow  
-**Airflow Versions**: 2.0+ and 3.0+
