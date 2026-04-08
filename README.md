@@ -530,7 +530,7 @@ LLM receives complete context:
 ### File Structure
 
 ```
-astro/
+mwaa-llm-powered-plugin/
 ├── check_plugin_compatibility.py     # Universal version checker (root level)
 ├── Dockerfile
 ├── README.md
