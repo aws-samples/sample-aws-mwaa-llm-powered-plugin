@@ -1,10 +1,57 @@
 """
 Utility functions for fetching scripts from various AWS/Data operators
 """
+import os
 import re
 from typing import Optional, Dict, Tuple
 
 import boto3
+
+
+def _allowed_base_dirs() -> list:
+    """Directories the plugin is permitted to read operator scripts from.
+
+    Restricted to the Airflow DAGs folder, AIRFLOW_HOME, and the standard MWAA
+    home. Used to prevent path traversal from user-controlled task parameters.
+    """
+    bases = []
+    try:
+        from airflow.configuration import conf  # pylint: disable=import-outside-toplevel
+        dags_folder = conf.get('core', 'dags_folder', fallback=None)
+        if dags_folder:
+            bases.append(os.path.realpath(dags_folder))
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+    airflow_home = os.environ.get('AIRFLOW_HOME')
+    if airflow_home:
+        bases.append(os.path.realpath(airflow_home))
+
+    # Standard Amazon MWAA home
+    bases.append(os.path.realpath('/usr/local/airflow'))
+
+    # De-duplicate while preserving order
+    return list(dict.fromkeys(bases))
+
+
+def safe_resolve_path(candidate: str) -> Optional[str]:
+    """Resolve a user-supplied path and return it only if it lives inside an
+    allowed base directory; otherwise return None.
+
+    Guards against path traversal (e.g. '../../etc/passwd') by resolving
+    symlinks and '..' with os.path.realpath before comparing against the
+    whitelist of allowed directories.
+    """
+    if not candidate or not isinstance(candidate, str):
+        return None
+    try:
+        real = os.path.realpath(candidate)
+    except (OSError, ValueError):
+        return None
+    for base in _allowed_base_dirs():
+        if real == base or real.startswith(base + os.sep):
+            return real
+    return None
 
 
 # Error patterns that benefit from seeing code
@@ -254,15 +301,20 @@ def extract_inline_script(operator_type: str, params: Dict) -> Tuple[Optional[st
             # Check if it's a file path (ends with .sh or contains a path)
             bash_cmd_stripped = bash_command.strip()
             if bash_cmd_stripped.endswith('.sh') or '/' in bash_cmd_stripped:
-                # Try to read the file
-                try:
-                    with open(bash_cmd_stripped, 'r', encoding='utf-8') as f:
-                        script_content = f.read()
-                    return script_content, f'bash_script_{bash_cmd_stripped.split("/")[-1]}'
-                except (FileNotFoundError, PermissionError, IOError) as e:
-                    print(f"DEBUG: Could not read bash script file {bash_cmd_stripped}: {e}")
-                    # Return the command itself as fallback
-                    return bash_command, 'inline_bash_command'
+                # Only read the file if it resolves inside an allowed directory
+                # (prevents path traversal from user-controlled bash_command).
+                safe_path = safe_resolve_path(bash_cmd_stripped)
+                if safe_path:
+                    try:
+                        with open(safe_path, 'r', encoding='utf-8') as f:
+                            script_content = f.read()
+                        return script_content, f'bash_script_{os.path.basename(safe_path)}'
+                    except (FileNotFoundError, PermissionError, IOError) as e:
+                        print(f"DEBUG: Could not read bash script file {safe_path}: {e}")
+                        return bash_command, 'inline_bash_command'
+                # Path outside allowed directories: treat as an inline command
+                print(f"DEBUG: Rejected non-whitelisted bash path: {bash_cmd_stripped}")
+                return bash_command, 'inline_bash_command'
             else:
                 # It's an inline command
                 return bash_command, 'inline_bash_command'
@@ -296,18 +348,27 @@ def extract_inline_script(operator_type: str, params: Dict) -> Tuple[Optional[st
                             
                             # Check if it's a lambda with exec() and file path
                             if 'exec(' in source and 'open(' in source:
-                                import re
-                                # Extract file path from open('path')
-                                match = re.search(r"open\(['\"]([^'\"]+)['\"]", source)
+                                # Bounded quantifier + capped input length to avoid
+                                # catastrophic backtracking (ReDoS) on tainted source.
+                                match = re.search(
+                                    r"open\(['\"]([^'\"]{1,4096})['\"]",
+                                    source[:100000]
+                                )
                                 if match:
                                     file_path = match.group(1)
                                     print(f"DEBUG: Found file path in lambda: {file_path}")
-                                    try:
-                                        with open(file_path, 'r', encoding='utf-8') as f:
-                                            file_content = f.read()
-                                        return file_content, f'python_script_{file_path.split("/")[-1]}'
-                                    except (FileNotFoundError, PermissionError, IOError) as e:
-                                        print(f"DEBUG: Could not read Python file {file_path}: {e}")
+                                    # Validate against the allowed-directory whitelist
+                                    # to prevent path traversal.
+                                    safe_path = safe_resolve_path(file_path)
+                                    if not safe_path:
+                                        print(f"DEBUG: Rejected non-whitelisted Python path: {file_path}")
+                                    else:
+                                        try:
+                                            with open(safe_path, 'r', encoding='utf-8') as f:
+                                                file_content = f.read()
+                                            return file_content, f'python_script_{os.path.basename(safe_path)}'
+                                        except (FileNotFoundError, PermissionError, IOError) as e:
+                                            print(f"DEBUG: Could not read Python file {safe_path}: {e}")
                             
                             return source, f'python_function_{func_name}'
                         except (TypeError, OSError) as e:
