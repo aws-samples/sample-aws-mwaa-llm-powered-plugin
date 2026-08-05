@@ -47,7 +47,9 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
     if not absolute_path.startswith(base_path) or not base_path:
         raise ValueError("Invalid file path")
 
-    return open(absolute_path, 'r').read()
+    # Use pathlib for reading — path is validated above.
+    from pathlib import Path  # pylint: disable=import-outside-toplevel
+    return Path(absolute_path).read_text(encoding='utf-8')
 
 
 # Error patterns that benefit from seeing code
