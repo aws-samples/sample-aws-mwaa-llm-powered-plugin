@@ -38,7 +38,13 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
     absolute_path = os.path.abspath(filename)
 
     # Check that the absolute path starts with the base path.
-    if not any(absolute_path.startswith(bp) for bp in base_dirs):
+    base_path = ''
+    for bp in base_dirs:
+        if absolute_path.startswith(bp):
+            base_path = bp
+            break
+
+    if not absolute_path.startswith(base_path) or not base_path:
         raise ValueError("Invalid file path")
 
     return open(absolute_path, 'r').read()
