@@ -266,8 +266,6 @@ def fetch_emr_serverless_script(
     except Exception as e:  # pylint: disable=broad-except
         print(f"DEBUG: Error fetching EMR Serverless script: {e}")
         return None, None
-        print(f"Error fetching EMR script: {e}")
-        return None, None
 
 
 def extract_inline_script(operator_type: str, params: Dict) -> Tuple[Optional[str], str]:
