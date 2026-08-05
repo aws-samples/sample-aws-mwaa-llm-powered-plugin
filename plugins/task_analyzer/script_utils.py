@@ -8,32 +8,6 @@ from typing import Optional, Dict, Tuple
 import boto3
 
 
-def _allowed_base_dirs() -> list:
-    """Directories the plugin is permitted to read operator scripts from.
-
-    Restricted to the Airflow DAGs folder, AIRFLOW_HOME, and the standard MWAA
-    home. Used to prevent path traversal from user-controlled task parameters.
-    """
-    bases = []
-    try:
-        from airflow.configuration import conf  # pylint: disable=import-outside-toplevel
-        dags_folder = conf.get('core', 'dags_folder', fallback=None)
-        if dags_folder:
-            bases.append(os.path.abspath(dags_folder))
-    except Exception:  # pylint: disable=broad-except
-        pass
-
-    airflow_home = os.environ.get('AIRFLOW_HOME')
-    if airflow_home:
-        bases.append(os.path.abspath(airflow_home))
-
-    # Standard Amazon MWAA home
-    bases.append(os.path.abspath('/usr/local/airflow'))
-
-    # De-duplicate while preserving order
-    return list(dict.fromkeys(bases))
-
-
 def read_whitelisted_file(filename: str) -> Optional[str]:
     """Safely read a user-referenced script file.
 
@@ -49,30 +23,42 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
     # Resolve the absolute, canonical path (follows symlinks).
     absolute_path = os.path.realpath(os.path.abspath(filename))
 
-    # Determine the allowed base directory for this path.
-    base_path = _get_validated_base(absolute_path)
-    if base_path is None:
-        print(f"DEBUG: Rejected non-whitelisted path: {filename}")
-        return None
-
-    # Path traversal guard: absolute path must start with the allowed base.
-    if not absolute_path.startswith(base_path):
-        raise ValueError("Invalid file path")
-
+    # Build the list of allowed base directories inline.
+    base_dirs: list = []
     try:
-        return open(absolute_path, 'r', encoding='utf-8').read()
-    except (FileNotFoundError, PermissionError, IOError) as err:
-        print(f"DEBUG: Could not read file {absolute_path}: {err}")
+        from airflow.configuration import conf  # pylint: disable=import-outside-toplevel
+        dags_folder = conf.get('core', 'dags_folder', fallback=None)
+        if dags_folder:
+            base_dirs.append(os.path.realpath(os.path.abspath(dags_folder)))
+    except Exception:  # pylint: disable=broad-except
+        pass
+    airflow_home = os.environ.get('AIRFLOW_HOME')
+    if airflow_home:
+        base_dirs.append(os.path.realpath(os.path.abspath(airflow_home)))
+    base_dirs.append(os.path.realpath(os.path.abspath('/usr/local/airflow')))
+
+    # Validate: find the matching base directory.
+    matched_base = ''
+    for base_path in base_dirs:
+        if absolute_path.startswith(base_path + os.sep) or absolute_path == base_path:
+            matched_base = base_path
+            break
+
+    if not matched_base:
         return None
 
+    # Final path traversal guard — verify absolute_path starts with matched base.
+    if not absolute_path.startswith(matched_base):
+        return None
 
-def _get_validated_base(absolute_path: str) -> Optional[str]:
-    """Return the whitelisted base directory that contains *absolute_path*, or None."""
-    for base in _allowed_base_dirs():
-        # Ensure separator boundary so /usr/local/airflow-other doesn't match
-        if absolute_path == base or absolute_path.startswith(base + os.sep):
-            return base
-    return None
+    # Safe to open: path is validated within an allowed directory.
+    try:
+        file_handle = open(absolute_path, 'r', encoding='utf-8')  # noqa: SIM115
+        content = file_handle.read()
+        file_handle.close()
+        return content
+    except (FileNotFoundError, PermissionError, IOError):
+        return None
 
 
 # Error patterns that benefit from seeing code
