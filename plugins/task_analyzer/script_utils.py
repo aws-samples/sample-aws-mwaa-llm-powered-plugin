@@ -34,28 +34,11 @@ def _allowed_base_dirs() -> list:
     return list(dict.fromkeys(bases))
 
 
-def _validate_path_within_base(absolute_path: str, base_path: str) -> bool:
-    """Return True if *absolute_path* is equal to or a child of *base_path*.
-
-    Uses os.path.commonpath for an OS-aware comparison that is immune to
-    trailing-separator tricks and case-sensitivity issues on case-insensitive
-    file systems.
-    """
-    try:
-        common = os.path.commonpath([absolute_path, base_path])
-        return common == base_path
-    except ValueError:
-        # On Windows, paths on different drives raise ValueError
-        return False
-
-
 def read_whitelisted_file(filename: str) -> Optional[str]:
     """Safely read a user-referenced script file.
 
-    Prevents path traversal (CWE-22): the resolved real path of the
-    user-supplied filename must reside within one of the whitelisted base
-    directories. Symlinks are resolved via os.path.realpath before validation
-    so that link-based bypass is also prevented.
+    Prevents path traversal (CWE-22) by resolving the canonical path and
+    verifying it starts with an allowed base directory before opening.
 
     Returns the file contents, or None if the path is not allowed, not found,
     or cannot be read.
@@ -63,32 +46,33 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
     if not filename or not isinstance(filename, str):
         return None
 
-    # Resolve symlinks and canonicalize the path to prevent link-based bypass.
+    # Resolve the absolute, canonical path (follows symlinks).
     absolute_path = os.path.realpath(os.path.abspath(filename))
 
-    # Validate against each whitelisted base directory.
-    base_dirs = _allowed_base_dirs()
-    validated_base: Optional[str] = None
-    for base_path in base_dirs:
-        if _validate_path_within_base(absolute_path, base_path):
-            validated_base = base_path
-            break
-
-    if validated_base is None:
+    # Determine the allowed base directory for this path.
+    base_path = _get_validated_base(absolute_path)
+    if base_path is None:
         print(f"DEBUG: Rejected non-whitelisted path: {filename}")
         return None
 
-    # Double-check: the validated path must start with the base directory.
-    # nosec B108 - path is validated above against a restricted allowlist.
-    if not absolute_path.startswith(validated_base):  # pragma: no cover
-        return None
+    # Path traversal guard: absolute path must start with the allowed base.
+    if not absolute_path.startswith(base_path):
+        raise ValueError("Invalid file path")
 
     try:
-        with open(absolute_path, 'r', encoding='utf-8') as handle:  # nosec
-            return handle.read()
+        return open(absolute_path, 'r', encoding='utf-8').read()
     except (FileNotFoundError, PermissionError, IOError) as err:
         print(f"DEBUG: Could not read file {absolute_path}: {err}")
         return None
+
+
+def _get_validated_base(absolute_path: str) -> Optional[str]:
+    """Return the whitelisted base directory that contains *absolute_path*, or None."""
+    for base in _allowed_base_dirs():
+        # Ensure separator boundary so /usr/local/airflow-other doesn't match
+        if absolute_path == base or absolute_path.startswith(base + os.sep):
+            return base
+    return None
 
 
 # Error patterns that benefit from seeing code
