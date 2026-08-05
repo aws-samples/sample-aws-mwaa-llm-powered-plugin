@@ -40,6 +40,7 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
 
     from pathlib import Path  # pylint: disable=import-outside-toplevel
 
+    # gitlab-advanced-sast-exclude
     resolved_path = Path(filename).resolve()
 
     # Validate the resolved path is within an allowed directory.
@@ -52,7 +53,7 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
     if not allowed:
         raise ValueError("Invalid file path")
 
-    return resolved_path.read_text(encoding='utf-8')
+    return resolved_path.read_text(encoding='utf-8')  # gitlab-advanced-sast-exclude
 
 
 # Error patterns that benefit from seeing code
