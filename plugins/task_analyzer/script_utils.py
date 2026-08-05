@@ -8,11 +8,29 @@ from typing import Optional, Dict, Tuple
 import boto3
 
 
+def _get_allowed_base_dirs() -> list:
+    """Return the list of directories the plugin is allowed to read from."""
+    from pathlib import Path  # pylint: disable=import-outside-toplevel
+    base_dirs: list = []
+    try:
+        from airflow.configuration import conf  # pylint: disable=import-outside-toplevel
+        dags_folder = conf.get('core', 'dags_folder', fallback=None)
+        if dags_folder:
+            base_dirs.append(Path(dags_folder).resolve())
+    except Exception:  # pylint: disable=broad-except
+        pass
+    airflow_home = os.environ.get('AIRFLOW_HOME')
+    if airflow_home:
+        base_dirs.append(Path(airflow_home).resolve())
+    base_dirs.append(Path('/usr/local/airflow').resolve())
+    return base_dirs
+
+
 def read_whitelisted_file(filename: str) -> Optional[str]:
     """Safely read a user-referenced script file.
 
     Prevents path traversal (CWE-22) by resolving the canonical path and
-    verifying it starts with an allowed base directory before opening.
+    verifying it resides within an allowed base directory before reading.
 
     Returns the file contents, or None if the path is not allowed, not found,
     or cannot be read.
@@ -20,36 +38,21 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
     if not filename or not isinstance(filename, str):
         return None
 
-    # Build the list of allowed base directories.
-    base_dirs: list = []
-    try:
-        from airflow.configuration import conf  # pylint: disable=import-outside-toplevel
-        dags_folder = conf.get('core', 'dags_folder', fallback=None)
-        if dags_folder:
-            base_dirs.append(os.path.realpath(os.path.abspath(dags_folder)))
-    except Exception:  # pylint: disable=broad-except
-        pass
-    airflow_home = os.environ.get('AIRFLOW_HOME')
-    if airflow_home:
-        base_dirs.append(os.path.realpath(os.path.abspath(airflow_home)))
-    base_dirs.append(os.path.realpath(os.path.abspath('/usr/local/airflow')))
+    from pathlib import Path  # pylint: disable=import-outside-toplevel
 
-    # Resolve the absolute path of the user-supplied filename.
-    absolute_path = os.path.abspath(filename)
+    resolved_path = Path(filename).resolve()
 
-    # Check that the absolute path starts with the base path.
-    base_path = ''
-    for bp in base_dirs:
-        if absolute_path.startswith(bp):
-            base_path = bp
+    # Validate the resolved path is within an allowed directory.
+    allowed = False
+    for base_dir in _get_allowed_base_dirs():
+        if resolved_path.is_relative_to(base_dir):
+            allowed = True
             break
 
-    if not absolute_path.startswith(base_path) or not base_path:
+    if not allowed:
         raise ValueError("Invalid file path")
 
-    # Use pathlib for reading — path is validated above.
-    from pathlib import Path  # pylint: disable=import-outside-toplevel
-    return Path(absolute_path).read_text(encoding='utf-8')
+    return resolved_path.read_text(encoding='utf-8')
 
 
 # Error patterns that benefit from seeing code
