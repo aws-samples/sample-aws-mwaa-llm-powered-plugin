@@ -146,9 +146,9 @@ def diagram1():
     # Arrow user -> plugin
     els.append(arrow("d1_a1", 122, 200, [[0, 0], [68, 0]], START_STROKE, "d1_user", "d1_plugin"))
 
-    # Step 2: Plugin (FastAPI/Flask)
+    # Step 2: Plugin (FastAPI)
     els.append(rect("d1_plugin", 190, 150, 160, 100, PRIMARY_FILL, PRIMARY_STROKE, "d1_plugin_t"))
-    els.append(text("d1_plugin_t", 195, 170, 150, 60, "Task Analyzer\nPlugin\n(FastAPI / Flask)", 14, TEXT_ON_DARK, "center", "middle", "d1_plugin"))
+    els.append(text("d1_plugin_t", 195, 170, 150, 60, "Task Analyzer\nPlugin\n(FastAPI)", 14, TEXT_ON_DARK, "center", "middle", "d1_plugin"))
 
     # Arrow plugin -> gather
     els.append(arrow("d1_a2", 352, 200, [[0, 0], [58, 0]], PRIMARY_STROKE, "d1_plugin", "d1_gather"))
@@ -277,57 +277,6 @@ def diagram2():
     save("02_multi_operator_analysis", els)
 
 # ============================================================
-# DIAGRAM 3: Version Compatibility Decision Tree
-# ============================================================
-def diagram3():
-    els = []
-    els.append(text("d3_title", 180, 20, 500, 35, "Version Compatibility Decision Tree", 28, TITLE_COLOR, "center"))
-
-    # Start
-    els.append(ellipse("d3_start", 370, 80, 120, 50, START_FILL, START_STROKE))
-    els.append(text("d3_start_t", 380, 92, 100, 25, "Check Airflow\nVersion", 13, TEXT_ON_LIGHT, "center"))
-
-    # Arrow to decision
-    els.append(arrow("d3_a1", 430, 132, [[0, 0], [0, 48]], START_STROKE, "d3_start", "d3_dec1"))
-
-    # Decision diamond
-    els.append(diamond("d3_dec1", 340, 180, 180, 120, DECISION_FILL, DECISION_STROKE, "d3_dec1_t"))
-    els.append(text("d3_dec1_t", 370, 218, 120, 44, "Airflow\nVersion?", 14, TEXT_ON_LIGHT, "center", "middle", "d3_dec1"))
-
-    # Left branch: 2.0-2.9
-    els.append(text("d3_lb", 200, 210, 100, 16, "2.0 - 2.9", 12, BODY_COLOR, "center"))
-    els.append(arrow("d3_a_left", 340, 240, [[-10, 0], [-100, 0]], DECISION_STROKE, "d3_dec1", "d3_flask"))
-
-    els.append(rect("d3_flask", 30, 220, 210, 60, WARNING_FILL, WARNING_STROKE, "d3_flask_t"))
-    els.append(text("d3_flask_t", 35, 228, 200, 44, "Flask Plugin\ntask_analyzer_plugin_v2.py", 12, TEXT_ON_LIGHT, "center", "middle", "d3_flask"))
-
-    # Right branch: 2.10+
-    els.append(text("d3_rb", 540, 210, 80, 16, "2.10+ / 3.0+", 12, BODY_COLOR, "center"))
-    els.append(arrow("d3_a_right", 522, 240, [[0, 0], [108, 0]], DECISION_STROKE, "d3_dec1", "d3_fast"))
-
-    els.append(rect("d3_fast", 630, 220, 210, 60, END_FILL, END_STROKE, "d3_fast_t"))
-    els.append(text("d3_fast_t", 635, 228, 200, 44, "FastAPI Plugin (Recommended)\ntask_analyzer_plugin.py", 12, TEXT_ON_LIGHT, "center", "middle", "d3_fast"))
-
-    # Bottom: shared components
-    els.append(text("d3_shared_label", 250, 320, 360, 20, "Both versions share the same frontend, prompts, and AWS logic", 13, SUBTITLE_COLOR, "center"))
-
-    # Shared boxes
-    shared = ["React Frontend", "CSS Styles", "Bedrock Prompts", "AWS Integration"]
-    for i, s in enumerate(shared):
-        sx = 130 + i * 170
-        rid = f"d3_sh_{i}"
-        tid = f"d3_sh_t_{i}"
-        els.append(rect(rid, sx, 355, 140, 45, TERTIARY_FILL, TERTIARY_STROKE, tid))
-        els.append(text(tid, sx+5, 362, 130, 30, s, 12, TEXT_ON_LIGHT, "center", "middle", rid))
-
-    # Run checker note
-    els.append(rect("d3_check_bg", 240, 430, 380, 45, CODE_BG, CODE_BG))
-    els.append(text("d3_check", 250, 438, 360, 30, "python check_plugin_compatibility.py", 14, CODE_TEXT, "left", "top"))
-    els.append(text("d3_check_label", 310, 418, 240, 14, "Auto-detect with:", 11, BODY_COLOR, "center"))
-
-    save("03_version_compatibility", els)
-
-# ============================================================
 # DIAGRAM 4: What the LLM Receives (Convergence)
 # ============================================================
 def diagram4():
@@ -392,6 +341,5 @@ def diagram4():
 if __name__ == "__main__":
     diagram1()
     diagram2()
-    diagram3()
     diagram4()
     print("All diagrams generated!")

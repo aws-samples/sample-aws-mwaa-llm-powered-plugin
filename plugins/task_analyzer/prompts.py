@@ -12,7 +12,7 @@ def get_model_id(var_name, default_value):
 # - bedrock_sonnet_4_6_model_id
 # - bedrock_opus_4_6_model_id
 # - bedrock_sonnet_4_5_model_id
-# - bedrock_sonnet_3_5_model_id
+# - bedrock_haiku_4_5_model_id
 BEDROCK_MODELS = {
     'claude-sonnet-4.6': {
         'model_id': get_model_id(
@@ -38,19 +38,19 @@ BEDROCK_MODELS = {
         'name': 'Claude Sonnet 4.5',
         'max_tokens': 8192
     },
-    'claude-3.5-sonnet': {
+    'claude-haiku-4.5': {
         'model_id': get_model_id(
-            'bedrock_sonnet_3_5_model_id',
-            'us.anthropic.claude-3-5-sonnet-20241022-v2:0'
+            'bedrock_haiku_4_5_model_id',
+            'us.anthropic.claude-haiku-4-5-20251001-v1:0'
         ),
-        'name': 'Claude Sonnet 3.5',
+        'name': 'Claude Haiku 4.5',
         'max_tokens': 8192
     }
 }
 
 BEDROCK_CONFIG = {
     'anthropic_version': 'bedrock-2023-05-31',
-    'default_model': get_model_id('bedrock_default_model', 'claude-3.5-sonnet'),
+    'default_model': get_model_id('bedrock_default_model', 'claude-sonnet-4.5'),
     'guardrail_id': get_model_id('bedrock_guardrail_id', ''),
     'guardrail_version': get_model_id('bedrock_guardrail_version', 'DRAFT'),
 }

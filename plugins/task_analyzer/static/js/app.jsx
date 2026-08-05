@@ -279,7 +279,10 @@ function TaskAnalyzer() {
             })
             .then(data => {
                 if (data.success) {
-                    const output = `Bucket: ${data.bucket}\nObject Count: ${data.count}\n\nObjects:\n${JSON.stringify(data.objects, null, 2)}`;
+                    const bedrockLine = data.bedrock_reachable
+                        ? 'Bedrock: reachable'
+                        : `Bedrock: NOT reachable (${data.bedrock_error})`;
+                    const output = `AWS connection OK\n\nAccount: ${data.account}\nARN: ${data.arn}\nRegion: ${data.region}\n${bedrockLine}`;
                     setDisplayContent(output);
                 } else {
                     setDisplayContent(`Error: ${data.error}\nType: ${data.error_type}`);

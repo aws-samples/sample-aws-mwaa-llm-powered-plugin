@@ -119,33 +119,45 @@ def get_template_js():
 
 @app.get("/api/test-aws")
 def test_aws():
-    """Test AWS connection by listing S3 bucket contents"""
+    """Test AWS connectivity using the configured credentials or execution role.
+
+    Verifies caller identity via STS (works in any account) and confirms Amazon
+    Bedrock is reachable, without depending on any specific S3 bucket.
+    """
     try:
         conn = BaseHook.get_connection('aws_default')
-        s3_client = boto3.client(
-            's3',
+        region = conn.extra_dejson.get('region_name', 'us-east-1')
+
+        sts_client = boto3.client(
+            'sts',
             aws_access_key_id=conn.login,
             aws_secret_access_key=conn.password,
-            region_name=conn.extra_dejson.get('region_name', 'us-east-1')
+            region_name=region
         )
+        identity = sts_client.get_caller_identity()
 
-        bucket_name = 'cdk-bms-test-common-bucket-189468857953'
-        response = s3_client.list_objects_v2(Bucket=bucket_name, MaxKeys=10)
-
-        objects = []
-        if 'Contents' in response:
-            for obj in response['Contents']:
-                objects.append({
-                    'key': obj['Key'],
-                    'size': obj['Size'],
-                    'last_modified': obj['LastModified'].isoformat()
-                })
+        # Confirm Bedrock is reachable and report a few active model IDs
+        bedrock_reachable = True
+        bedrock_error = None
+        try:
+            bedrock_client = boto3.client(
+                'bedrock',
+                aws_access_key_id=conn.login,
+                aws_secret_access_key=conn.password,
+                region_name=region
+            )
+            bedrock_client.list_foundation_models()
+        except Exception as bedrock_err:  # pylint: disable=broad-except
+            bedrock_reachable = False
+            bedrock_error = str(bedrock_err)
 
         return JSONResponse({
             'success': True,
-            'bucket': bucket_name,
-            'objects': objects,
-            'count': len(objects)
+            'account': identity.get('Account'),
+            'arn': identity.get('Arn'),
+            'region': region,
+            'bedrock_reachable': bedrock_reachable,
+            'bedrock_error': bedrock_error
         })
     except Exception as e:  # pylint: disable=broad-except
         return JSONResponse(
