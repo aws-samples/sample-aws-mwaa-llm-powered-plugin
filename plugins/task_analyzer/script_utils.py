@@ -20,10 +20,7 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
     if not filename or not isinstance(filename, str):
         return None
 
-    # Resolve the absolute, canonical path (follows symlinks).
-    absolute_path = os.path.realpath(os.path.abspath(filename))
-
-    # Build the list of allowed base directories inline.
+    # Build the list of allowed base directories.
     base_dirs: list = []
     try:
         from airflow.configuration import conf  # pylint: disable=import-outside-toplevel
@@ -37,28 +34,14 @@ def read_whitelisted_file(filename: str) -> Optional[str]:
         base_dirs.append(os.path.realpath(os.path.abspath(airflow_home)))
     base_dirs.append(os.path.realpath(os.path.abspath('/usr/local/airflow')))
 
-    # Validate: find the matching base directory.
-    matched_base = ''
-    for base_path in base_dirs:
-        if absolute_path.startswith(base_path + os.sep) or absolute_path == base_path:
-            matched_base = base_path
-            break
+    # Resolve the absolute path of the user-supplied filename.
+    absolute_path = os.path.abspath(filename)
 
-    if not matched_base:
-        return None
+    # Check that the absolute path starts with the base path.
+    if not any(absolute_path.startswith(bp) for bp in base_dirs):
+        raise ValueError("Invalid file path")
 
-    # Final path traversal guard — verify absolute_path starts with matched base.
-    if not absolute_path.startswith(matched_base):
-        return None
-
-    # Safe to open: path is validated within an allowed directory.
-    try:
-        file_handle = open(absolute_path, 'r', encoding='utf-8')  # noqa: SIM115
-        content = file_handle.read()
-        file_handle.close()
-        return content
-    except (FileNotFoundError, PermissionError, IOError):
-        return None
+    return open(absolute_path, 'r').read()
 
 
 # Error patterns that benefit from seeing code
@@ -311,7 +294,10 @@ def extract_inline_script(operator_type: str, params: Dict) -> Tuple[Optional[st
                 # Read the referenced script only if it resolves inside an
                 # allowed directory (prevents path traversal). Falls back to the
                 # inline command when the path is not whitelisted or unreadable.
-                script_content = read_whitelisted_file(bash_cmd_stripped)
+                try:
+                    script_content = read_whitelisted_file(bash_cmd_stripped)
+                except (ValueError, FileNotFoundError, PermissionError, IOError):
+                    script_content = None
                 if script_content is not None:
                     return script_content, f'bash_script_{os.path.basename(bash_cmd_stripped)}'
                 return bash_command, 'inline_bash_command'
@@ -359,7 +345,10 @@ def extract_inline_script(operator_type: str, params: Dict) -> Tuple[Optional[st
                                     print(f"DEBUG: Found file path in lambda: {file_path}")
                                     # Read only if the path is inside an allowed
                                     # directory (prevents path traversal).
-                                    file_content = read_whitelisted_file(file_path)
+                                    try:
+                                        file_content = read_whitelisted_file(file_path)
+                                    except (ValueError, FileNotFoundError, PermissionError, IOError):
+                                        file_content = None
                                     if file_content is not None:
                                         return file_content, f'python_script_{os.path.basename(file_path)}'
                             
