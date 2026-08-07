@@ -5,6 +5,9 @@ strands_examples/logs/
 streamlit_examples/logs/
 streamlit_examples/game_searches/
 
+# Build artifacts
+plugins.zip
+
 # Test artifacts
 test_logs/
 test_reports/

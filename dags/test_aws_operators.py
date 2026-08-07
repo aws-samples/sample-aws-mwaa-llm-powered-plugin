@@ -75,7 +75,7 @@ with DAG(
                         "yarn",
                         "--conf",
                         "spark.sql.shuffle.partitions=200",
-                        "s3://bms-test-cfn/mwaa-blog/process_sales.py",
+                        "s3://your-bucket/scripts/process_sales.py",
                         "--input",
                         "s3://my-bucket/raw-data/sales/",
                         "--output",
@@ -95,7 +95,7 @@ with DAG(
         execution_role_arn="arn:aws:iam::123456789012:role/EMRServerlessRole",
         job_driver={
             "sparkSubmit": {
-                "entryPoint": "s3://bms-test-cfn/mwaa-blog/process_sales.py",
+                "entryPoint": "s3://your-bucket/scripts/process_sales.py",
                 "entryPointArguments": [
                     "--input", "s3://my-bucket/raw-data/sales/",
                     "--output", "s3://my-bucket/processed-data/sales/",
