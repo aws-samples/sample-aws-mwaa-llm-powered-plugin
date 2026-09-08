@@ -26,7 +26,7 @@ def _get_allowed_base_dirs() -> list:
     return base_dirs
 
 
-def read_whitelisted_file(filename: str) -> Optional[str]:
+def read_allowlisted_file(filename: str) -> Optional[str]:
     """Safely read a user-referenced script file.
 
     Prevents path traversal (CWE-22) by resolving the canonical path and
@@ -303,9 +303,9 @@ def extract_inline_script(operator_type: str, params: Dict) -> Tuple[Optional[st
             if bash_cmd_stripped.endswith('.sh') or '/' in bash_cmd_stripped:
                 # Read the referenced script only if it resolves inside an
                 # allowed directory (prevents path traversal). Falls back to the
-                # inline command when the path is not whitelisted or unreadable.
+                # inline command when the path is not allowlisted or unreadable.
                 try:
-                    script_content = read_whitelisted_file(bash_cmd_stripped)
+                    script_content = read_allowlisted_file(bash_cmd_stripped)
                 except (ValueError, FileNotFoundError, PermissionError, IOError):
                     script_content = None
                 if script_content is not None:
@@ -356,7 +356,7 @@ def extract_inline_script(operator_type: str, params: Dict) -> Tuple[Optional[st
                                     # Read only if the path is inside an allowed
                                     # directory (prevents path traversal).
                                     try:
-                                        file_content = read_whitelisted_file(file_path)
+                                        file_content = read_allowlisted_file(file_path)
                                     except (ValueError, FileNotFoundError, PermissionError, IOError):
                                         file_content = None
                                     if file_content is not None:
