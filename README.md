@@ -376,7 +376,7 @@ LLM receives complete context:
 
 #### Token Usage
 
-![What the LLM Receives](diagrams/04_llm_context_convergence.png)
+![What the LLM Receives](diagrams/03_llm_context_convergence.png)
 
 **Typical Case:**
 - DAG code: ~500 tokens
