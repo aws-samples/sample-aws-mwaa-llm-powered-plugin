@@ -1,6 +1,6 @@
 # Task Analyzer Plugin
 
-AI-powered Airflow task failure analyzer for **Apache Airflow 3.x** (FastAPI plugin interface), including Amazon MWAA.
+AI-powered Airflow task failure analyzer for **Apache Airflow 3.x** (FastAPI plugin interface), including Amazon MWAA
 
 ## Table of Contents
 - [Quick Start](#quick-start)
